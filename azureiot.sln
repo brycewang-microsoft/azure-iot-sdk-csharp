@@ -90,6 +90,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thermostat", "iothub\device
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TemperatureController", "iothub\device\samples\PnpDeviceSamples\TemperatureController\TemperatureController.csproj", "{F172E392-E692-4862-9DB6-8CBBAF368535}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{CC27944C-275D-4547-90AC-0DE7708AAF4D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwinSample", "..\azure-iot-samples-csharp\iot-hub\Samples\device\TwinSample\TwinSample.csproj", "{D0E03995-1061-4CDA-8D3F-BFC73D258DFD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +175,10 @@ Global
 		{F172E392-E692-4862-9DB6-8CBBAF368535}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F172E392-E692-4862-9DB6-8CBBAF368535}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F172E392-E692-4862-9DB6-8CBBAF368535}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0E03995-1061-4CDA-8D3F-BFC73D258DFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0E03995-1061-4CDA-8D3F-BFC73D258DFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0E03995-1061-4CDA-8D3F-BFC73D258DFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0E03995-1061-4CDA-8D3F-BFC73D258DFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -210,6 +218,7 @@ Global
 		{DC9D3907-BA41-4138-AAC8-A3AB270D5473} = {ABE041E0-27AF-4AE7-B9CB-7DD2BC7D3850}
 		{83AB7A56-509B-44C3-9CA3-AB0581098B18} = {DC9D3907-BA41-4138-AAC8-A3AB270D5473}
 		{F172E392-E692-4862-9DB6-8CBBAF368535} = {DC9D3907-BA41-4138-AAC8-A3AB270D5473}
+		{D0E03995-1061-4CDA-8D3F-BFC73D258DFD} = {CC27944C-275D-4547-90AC-0DE7708AAF4D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AF61665D-340A-494B-9705-571456BDC752}

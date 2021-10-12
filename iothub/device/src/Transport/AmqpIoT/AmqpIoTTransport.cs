@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Devices.Client.Transport.AmqpIoT
                 if (Logging.IsEnabled) Logging.Enter(this, timeout, $"{nameof(CreateClientWebSocketAsync)}");
 
                 var websocket = new ClientWebSocket();
-
+                websocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(0);
                 // Set SubProtocol to AMQPWSB10
                 websocket.Options.AddSubProtocol(WebSocketConstants.SubProtocols.Amqpwsb10);
 

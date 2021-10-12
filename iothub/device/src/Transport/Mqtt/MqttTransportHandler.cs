@@ -6,6 +6,7 @@ using DotNetty.Codecs.Mqtt;
 using DotNetty.Codecs.Mqtt.Packets;
 using DotNetty.Common.Concurrency;
 using DotNetty.Handlers.Logging;
+using DotNetty.Handlers.Timeout;
 using DotNetty.Handlers.Tls;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
@@ -950,6 +951,8 @@ namespace Microsoft.Azure.Devices.Client.Transport.Mqtt
                             .AddLast(
                                 tlsHandler,
                                 MqttEncoder.Instance,
+                                new WriteTimeoutHandler(60),
+                                new ReadTimeoutHandler(60),
                                 new MqttDecoder(false, MaxMessageSize),
                                 new LoggingHandler(LogLevel.DEBUG),
                                 _mqttIotHubAdapterFactory.Create(this, iotHubConnectionString, settings, productInfo, options));
@@ -1000,7 +1003,7 @@ namespace Microsoft.Azure.Devices.Client.Transport.Mqtt
                 var websocketUri = new Uri(WebSocketConstants.Scheme + iotHubConnectionString.HostName + ":" + WebSocketConstants.SecurePort + WebSocketConstants.UriSuffix + additionalQueryParams);
                 var websocket = new ClientWebSocket();
                 websocket.Options.AddSubProtocol(WebSocketConstants.SubProtocols.Mqtt);
-
+                websocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(0);
                 try
                 {
                     if (IsProxyConfigured())

@@ -3,6 +3,7 @@
 
 using System;
 using System.Text.RegularExpressions;
+using DotNetty.Handlers.Timeout;
 using Microsoft.Azure.Devices.Client.Extensions;
 using Microsoft.Azure.Devices.Client.Transport;
 using Microsoft.Azure.Devices.Client.Transport.Mqtt;
