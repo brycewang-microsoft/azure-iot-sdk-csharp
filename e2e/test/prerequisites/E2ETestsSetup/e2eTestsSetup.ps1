@@ -425,7 +425,14 @@ $iotHubName = az deployment group show -g $ResourceGroup -n $deploymentName --qu
 Write-Host "`nCreating app registration $logAnalyticsAppRegnName"
 $logAnalyticsAppRegUrl = "http://$logAnalyticsAppRegnName"
 $logAnalyticsAppId = az ad sp create-for-rbac -n $logAnalyticsAppRegUrl --role "Reader" --scope $resourceGroupId --query "appId" --output tsv
-Write-Host "`nCreated application $logAnalyticsAppRegnName with Id $logAnalyticsAppId."
+
+# On subscriptions where you're not allowed to create a service principal the appid will be empty and cause parts of the script to later fail.
+if ($null -eq $logAnalyticsAppId) {
+    Write-Host "`nUnable to create $logAnalyticsAppRegnName check your permissions against the subscription."
+} else {
+    Write-Host "`nCreated application $logAnalyticsAppRegnName with Id $logAnalyticsAppId."
+}
+
 
 #################################################################################################################################################
 # Configure an AAD app to perform IoT hub data actions.
@@ -435,9 +442,19 @@ $iotHubAadTestAppRegUrl = "http://$iotHubAadTestAppRegName"
 $iotHubDataContributorRoleId = "4fc6c259987e4a07842ec321cc9d413f"
 $iotHubScope = "/subscriptions/$SubscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Devices/IotHubs/$iotHubName"
 $iotHubAadTestAppInfo = az ad sp create-for-rbac -n $iotHubAadTestAppRegUrl --role $iotHubDataContributorRoleId --scope $iotHubScope --query '{appId:appId, password:password}' | ConvertFrom-Json
-$iotHubAadTestAppPassword = $iotHubAadTestAppInfo.password
-$iotHubAadTestAppId = $iotHubAadTestAppInfo.appId
-Write-Host "`nCreated application $iotHubAadTestAppRegName with Id $iotHubAadTestAppId."
+
+# On subscriptions where you're not allowed to create a service principal the appid will be empty and cause parts of the script to later fail.
+if ($null -eq $iotHubAadTestAppInfo) {
+    $iotHubAadTestAppInfo = ""
+    $iotHubAadTestAppPassword = ""
+    $iotHubAadTestAppId = ""
+    Write-Host "`nUnable to create $iotHubAadTestAppRegName check your permissions against the subscription."
+} else {
+    $iotHubAadTestAppPassword = $iotHubAadTestAppInfo.password
+    $iotHubAadTestAppId = $iotHubAadTestAppInfo.appId
+    Write-Host "`nCreated application $iotHubAadTestAppRegName with Id $iotHubAadTestAppId."
+}
+
 
 #################################################################################################################################################
 # Add role assignement for User assinged managed identity to be able to perform import and export jobs on the IoT hub.
@@ -466,7 +483,7 @@ if ($certExits)
     az iot hub certificate delete -g $ResourceGroup --hub-name $iotHubName --name $hubUploadCertificateName --etag $etag
 }
 Write-Host "`nUploading new certificate to IoT hub."
-az iot hub certificate create -g $ResourceGroup --path $rootCertPath --hub-name $iotHubName --name $hubUploadCertificateName --output none
+az iot hub certificate create -g $ResourceGroup --path $rootCertPath --hub-name $iotHubName --name $hubUploadCertificateName --output none --verified
 
 $isVerified = az iot hub certificate show -g $ResourceGroup --hub-name $iotHubName --name $hubUploadCertificateName --query 'properties.isVerified' --output tsv
 if ($isVerified -eq 'false')
@@ -578,7 +595,7 @@ if ($certExits)
     az iot dps certificate delete -g $ResourceGroup --dps-name $dpsName --name $uploadCertificateName --etag $etag
 }
 Write-Host "`nUploading new certificate to DPS."
-az iot dps certificate create -g $ResourceGroup --path $rootCertPath --dps-name $dpsName --certificate-name $uploadCertificateName --output none
+az iot dps certificate create -g $ResourceGroup --path $rootCertPath --dps-name $dpsName --certificate-name $uploadCertificateName --output none --verified
 
 $isVerified = az iot dps certificate show -g $ResourceGroup --dps-name $dpsName --certificate-name $uploadCertificateName --query 'properties.isVerified' --output tsv
 if ($isVerified -eq 'false')
@@ -628,23 +645,30 @@ az iot dps enrollment create `
     --certificate-path $individualDeviceCertPath `
     --output none
 
-Write-Host "`nCreating a self-signed certificate and placing it in $ResourceGroup."
-az ad app credential reset --id $logAnalyticsAppId --create-cert --keyvault $keyVaultName --cert $ResourceGroup --output none
-Write-Host "`nSuccessfully created a self signed certificate for your application $logAnalyticsAppRegnName in $keyVaultName key vault with cert name $ResourceGroup."
+# When running this script against a sub that you are not an owner of you cannot create service prinicpal ids
+# This will not affect the majority of your E2E tests but it will cause the script to fail.
+if ($null -ne $logAnalyticsAppId) {
+    Write-Host "`nCreating a self-signed certificate and placing it in $ResourceGroup."
+    az ad app credential reset --id $logAnalyticsAppId --create-cert --keyvault $keyVaultName --cert $ResourceGroup --output none
+    Write-Host "`nSuccessfully created a self signed certificate for your application $logAnalyticsAppRegnName in $keyVaultName key vault with cert name $ResourceGroup."
 
-Write-Host "`nFetching the certificate binary."
-$selfSignedCerts = "$PSScriptRoot\selfSignedCerts"
-if (Test-Path $selfSignedCerts -PathType Leaf)
-{
+
+    Write-Host "`nFetching the certificate binary."
+    $selfSignedCerts = "$PSScriptRoot\selfSignedCerts"
+    if (Test-Path $selfSignedCerts -PathType Leaf)
+    {
+        Remove-Item -r $selfSignedCerts
+    }
+
+    az keyvault secret download --file $selfSignedCerts --vault-name $keyVaultName -n $ResourceGroup --encoding base64
+    $fileContent = Get-Content $selfSignedCerts -AsByteStream
+    $fileContentB64String = [System.Convert]::ToBase64String($fileContent);
+
+    Write-Host "`nSuccessfully fetched the certificate bytes. Removing the cert file from the disk."
     Remove-Item -r $selfSignedCerts
+} else {
+    $logAnalyticsAppId = "";
 }
-
-az keyvault secret download --file $selfSignedCerts --vault-name $keyVaultName -n $ResourceGroup --encoding base64
-$fileContent = Get-Content $selfSignedCerts -AsByteStream
-$fileContentB64String = [System.Convert]::ToBase64String($fileContent);
-
-Write-Host "`nSuccessfully fetched the certificate bytes. Removing the cert file from the disk."
-Remove-Item -r $selfSignedCerts
 
 ###################################################################################################################################
 # Store all secrets in a KeyVault - Values will be pulled down from here to configure environment variables
